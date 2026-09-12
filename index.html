@@ -153,14 +153,12 @@ footer{margin:28px 18px 0;padding:18px 0;border-top:1px solid #f3cad9;display:fl
 </div>
 <script>
 // ============================================================
-// STINGDiO AUTO GALLERY
-// ตั้งชื่อไฟล์ใน GitHub แบบนี้ แล้วเว็บจะจัดหมวดให้อัตโนมัติ:
-//   anime-shinobu.jpg        → Anime / ชื่อ Shinobu
-//   kpop-park-jihoon.png     → K-POP / ชื่อ Park Jihoon
-// รองรับภาษาไทยด้วย:
-//   อนิเมะ-shinobu.jpg
-//   เคป็อป-park-jihoon.png
-// วางรูปไว้หน้าเดียวกับ index.html ได้เลย ไม่ต้องแก้รายการรูปในโค้ด
+// STINGDiO AUTO GALLERY — FOLDER MODE
+// แยกรูปใน GitHub เป็น 2 โฟลเดอร์:
+//   /anime/   → Anime
+//   /kpop/    → K-POP
+// ชื่อไฟล์ไม่ต้องใส่ anime- หรือ kpop- แล้ว
+// ตัวอย่าง: anime/IMG_6897.jpg  และ  kpop/IMG_6900.jpg
 // ============================================================
 
 const PAGE_SIZE = 20;
@@ -175,9 +173,6 @@ const count = document.getElementById('count');
 const empty = document.getElementById('empty');
 const search = document.getElementById('search');
 const searchClear = document.getElementById('searchClear');
-const patternUpload = document.getElementById('patternUpload');
-const patternName = document.getElementById('patternName');
-const patternCategory = document.getElementById('patternCategory');
 const loadMoreWrap = document.getElementById('loadMoreWrap');
 const loadMoreBtn = document.getElementById('loadMoreBtn');
 const showing = document.getElementById('showing');
@@ -187,20 +182,12 @@ function escapeHTML(v){
 }
 
 function prettyTitle(filename){
-  const noExt = filename.replace(/\.[^.]+$/,'');
-  const withoutPrefix = noExt.replace(/^(anime|kpop|อนิเมะ|เคป็อป)-/i,'');
-  return withoutPrefix
+  return filename
+    .replace(/\.[^.]+$/,'')
     .replace(/[_-]+/g,' ')
     .replace(/\s+/g,' ')
     .trim()
-    .replace(/\b\w/g,c=>c.toUpperCase());
-}
-
-function categoryFromFilename(filename){
-  const n = filename.toLowerCase();
-  if(n.startsWith('anime-') || n.startsWith('อนิเมะ-')) return 'anime';
-  if(n.startsWith('kpop-') || n.startsWith('เคป็อป-')) return 'kpop';
-  return null;
+    .replace(/\w/g,c=>c.toUpperCase());
 }
 
 function isImage(filename){
@@ -218,13 +205,17 @@ function getGitHubLocation(){
   return null;
 }
 
+function normalizeFolderName(name){
+  return String(name).toLowerCase().replace(/[\s_-]+/g,'');
+}
+
 async function loadPatternsFromGitHub(){
   const gh = getGitHubLocation();
   if(!gh){
-    // เปิด index.html ในเครื่อง: จะยังไม่สามารถอ่านรายชื่อไฟล์ GitHub อัตโนมัติ
-    // แต่ปุ่ม Upload ด้านบนยังใช้ทดลองหน้าเว็บได้
     patterns = [];
-    render();
+    count.textContent = 'Open with GitHub Pages to load patterns';
+    empty.style.display = 'block';
+    empty.innerHTML = 'กรุณาเปิดเว็บผ่าน GitHub Pages เพื่อโหลดรูปจากโฟลเดอร์ <b>anime</b> และ <b>kpop</b> ♡';
     return;
   }
 
@@ -232,30 +223,48 @@ async function loadPatternsFromGitHub(){
   empty.style.display = 'none';
 
   try{
-    const api = `https://api.github.com/repos/${encodeURIComponent(gh.owner)}/${encodeURIComponent(gh.repo)}/contents/`;
-    const res = await fetch(api, {headers:{'Accept':'application/vnd.github+json'}});
-    if(!res.ok) throw new Error(`GitHub API ${res.status}`);
-    const files = await res.json();
+    const rootApi = `https://api.github.com/repos/${encodeURIComponent(gh.owner)}/${encodeURIComponent(gh.repo)}/contents/`;
+    const rootRes = await fetch(rootApi,{headers:{'Accept':'application/vnd.github+json'}});
+    if(!rootRes.ok) throw new Error(`GitHub API ${rootRes.status}`);
+    const rootItems = await rootRes.json();
 
-    patterns = files
-      .filter(f => f.type === 'file' && isImage(f.name) && categoryFromFilename(f.name))
-      .map(f => ({
+    const dirs = rootItems.filter(item=>item.type==='dir');
+    const animeDir = dirs.find(d=>normalizeFolderName(d.name)==='anime');
+    const kpopDir = dirs.find(d=>['kpop','k-pop'].includes(String(d.name).toLowerCase()) || normalizeFolderName(d.name)==='kpop');
+
+    const jobs = [];
+    if(animeDir) jobs.push(fetch(animeDir.url,{headers:{'Accept':'application/vnd.github+json'}}).then(r=>{if(!r.ok) throw new Error(`Anime folder ${r.status}`); return r.json();}).then(files=>({category:'anime',files})));
+    if(kpopDir) jobs.push(fetch(kpopDir.url,{headers:{'Accept':'application/vnd.github+json'}}).then(r=>{if(!r.ok) throw new Error(`KPOP folder ${r.status}`); return r.json();}).then(files=>({category:'kpop',files})));
+
+    if(!jobs.length){
+      patterns=[];
+      visibleCount=PAGE_SIZE;
+      render();
+      empty.style.display='block';
+      empty.innerHTML='ยังไม่พบโฟลเดอร์ <b>anime</b> หรือ <b>kpop</b> ใน GitHub ♡';
+      return;
+    }
+
+    const results = await Promise.all(jobs);
+    patterns = results.flatMap(group => group.files
+      .filter(f=>f.type==='file' && isImage(f.name))
+      .map(f=>({
         title: prettyTitle(f.name),
-        category: categoryFromFilename(f.name),
-        image: f.name,
+        category: group.category,
+        image: f.download_url || f.path,
         size: '38 × 38',
         filename: f.name
       }))
-      .sort((a,b)=>a.title.localeCompare(b.title, undefined, {numeric:true,sensitivity:'base'}));
+    ).sort((a,b)=>a.title.localeCompare(b.title,undefined,{numeric:true,sensitivity:'base'}));
 
     visibleCount = PAGE_SIZE;
     render();
   }catch(err){
     console.error(err);
-    patterns = [];
-    count.textContent = 'Could not load GitHub images';
-    empty.style.display = 'block';
-    empty.innerHTML = 'โหลดรูปจาก GitHub ไม่สำเร็จ ♡<br><small>เช็กว่า Repository เป็น Public และเปิดผ่าน GitHub Pages</small>';
+    patterns=[];
+    count.textContent='Could not load GitHub images';
+    empty.style.display='block';
+    empty.innerHTML='โหลดรูปจาก GitHub ไม่สำเร็จ ♡<br><small>เช็กว่า Repository เป็น Public และมีโฟลเดอร์ anime / kpop</small>';
   }
 }
 
@@ -299,7 +308,7 @@ function render(){
   gallery.classList.toggle('cols-2', columns === 2);
   count.textContent = filtered.length > PAGE_SIZE ? `${visible.length} / ${filtered.length} items` : `${filtered.length} items`;
   empty.style.display = filtered.length ? 'none' : 'block';
-  if(!filtered.length) empty.innerHTML = 'ยังไม่มีรูปที่ชื่อขึ้นต้นด้วย <b>anime-</b> หรือ <b>kpop-</b> ♡';
+  if(!filtered.length) empty.innerHTML = 'ยังไม่มีรูปในโฟลเดอร์ <b>anime</b> หรือ <b>kpop</b> ♡';
   loadMoreWrap.style.display = filtered.length > visibleCount ? 'block' : 'none';
   showing.textContent = `Showing ${visible.length} of ${filtered.length} patterns`;
 }
