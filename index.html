@@ -113,6 +113,9 @@
     .gallery.cols-2 .download{font-size:11px;padding:7px 6px;border-radius:10px}
     .gallery.cols-2 .badge{top:6px;left:6px;font-size:9px;padding:4px 7px}
 
+    .load-more-wrap{display:none;padding:0 14px 30px;text-align:center}
+    .load-more{width:min(100%,420px);border:3px solid var(--black);border-radius:999px;padding:13px 18px;background:#fff;color:var(--black);font-weight:1000;cursor:pointer;box-shadow:4px 4px 0 var(--pink)}
+    .load-more:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--pink)}
     .empty{display:none;margin:14px;border:3px dashed var(--black);border-radius:20px;padding:28px;text-align:center;font-weight:1000;background:#fff}
     footer{text-align:center;padding:22px 14px 34px;background:var(--black);color:white;font-weight:900}
     footer span{color:var(--pink)}
@@ -150,7 +153,7 @@
       <label class="upload-btn" for="patternUpload">＋ UPLOAD PATTERN</label>
       <input id="patternUpload" type="file" accept="image/*">
     </div>
-    <div style="font-size:12px;font-weight:800;color:#777;line-height:1.35">ปุ่ม Upload ด้านบนใช้ลองจัดหน้าเท่านั้น • ถ้าจะเก็บถาวรให้อัปโหลดรูปเข้าโฟลเดอร์ <b>patterns</b> ใน GitHub แล้วเพิ่ม 1 บรรทัดใน PATTERN LIST</div>
+    <div style="font-size:12px;font-weight:800;color:#777;line-height:1.35">ปุ่ม Upload ด้านบนใช้ลองจัดหน้าเท่านั้น • ถ้าจะเก็บถาวรให้อัปโหลดรูปไว้หน้าเดียวกับ <b>index.html</b> ใน GitHub แล้วเพิ่ม 1 บรรทัดใน PATTERN LIST</div>
   </section>
 
   <section class="hero">
@@ -177,6 +180,7 @@
   <main id="gallery" class="gallery">
     <!-- รูปถาวรจะถูกอ่านจากโฟลเดอร์ patterns/ ตามรายการด้านล่างใน PATTERN LIST -->
   </main>
+  <div id="loadMoreWrap" class="load-more-wrap"><button id="loadMoreBtn" class="load-more">LOAD MORE ＋</button></div>
   <div id="empty" class="empty">ไม่เจอแพตเทิร์นที่ค้นหา 🥺</div>
 
   <footer>made for <span>STINGDiO</span> ✦ fandom workshop</footer>
@@ -185,7 +189,7 @@
 <script>
 // ============================================================
 // ✨ PATTERN LIST — เวลาจะเพิ่มรูปถาวร แก้เฉพาะตรงนี้เท่านั้น
-// 1) อัปโหลดรูปเข้าโฟลเดอร์ patterns ใน GitHub
+// 1) อัปโหลดรูปไว้หน้าเดียวกับ index.html ใน GitHub
 // 2) copy 1 บรรทัดด้านล่าง แล้วแก้ title / category / image
 // category ใช้ได้แค่ 'anime' หรือ 'kpop'
 // ============================================================
@@ -194,12 +198,14 @@ const patterns = [
   { title:'Mard (971) [镜]', category:'anime', image:'mard971.jpeg' },
 
   // ตัวอย่างตอนเพิ่มรูปใหม่:
-  // { title:'Re:Zero - Rem 01', category:'anime', image:'patterns/rezero-rem-01.jpg' },
-  // { title:'Park Jihoon 01', category:'kpop', image:'patterns/park-jihoon-01.jpg' },
+  // { title:'Re:Zero - Rem 01', category:'anime', image:'rezero-rem-01.jpg' },
+  // { title:'Park Jihoon 01', category:'kpop', image:'park-jihoon-01.jpg' },
 ];
 
 let activeFilter = 'all';
 let columns = 1;
+const PAGE_SIZE = 20;
+let visibleCount = PAGE_SIZE;
 const gallery = document.getElementById('gallery');
 const count = document.getElementById('count');
 const empty = document.getElementById('empty');
@@ -207,6 +213,8 @@ const search = document.getElementById('search');
 const patternUpload = document.getElementById('patternUpload');
 const patternName = document.getElementById('patternName');
 const patternCategory = document.getElementById('patternCategory');
+const loadMoreWrap = document.getElementById('loadMoreWrap');
+const loadMoreBtn = document.getElementById('loadMoreBtn');
 
 function cardHTML(item){
   const badgeText = item.category === 'anime' ? 'ANIME' : 'K-POP';
@@ -233,10 +241,14 @@ function render(){
     (activeFilter === 'all' || p.category === activeFilter) &&
     (!q || p.title.toLowerCase().includes(q))
   );
-  gallery.innerHTML = filtered.map(cardHTML).join('');
+  const visibleItems = filtered.slice(0, visibleCount);
+  gallery.innerHTML = visibleItems.map(cardHTML).join('');
   gallery.classList.toggle('cols-2', columns === 2);
-  count.textContent = `${filtered.length} items`;
+  count.textContent = filtered.length > PAGE_SIZE
+    ? `${visibleItems.length} / ${filtered.length} items`
+    : `${filtered.length} items`;
   empty.style.display = filtered.length ? 'none' : 'block';
+  loadMoreWrap.style.display = filtered.length > visibleCount ? 'block' : 'none';
 }
 
 function openPattern(src){
@@ -248,6 +260,7 @@ document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click',()
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   activeFilter = btn.dataset.filter;
+  visibleCount = PAGE_SIZE;
   render();
 }));
 
@@ -258,7 +271,15 @@ document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('clic
   render();
 }));
 
-search.addEventListener('input',render);
+search.addEventListener('input',()=>{
+  visibleCount = PAGE_SIZE;
+  render();
+});
+
+loadMoreBtn.addEventListener('click',()=>{
+  visibleCount += PAGE_SIZE;
+  render();
+});
 patternUpload.addEventListener('change', (e)=>{
   const file = e.target.files && e.target.files[0];
   if(!file || !file.type.startsWith('image/')) return;
@@ -271,6 +292,7 @@ patternUpload.addEventListener('change', (e)=>{
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.filter==='all'));
   search.value='';
   patternName.value='';
+  visibleCount = PAGE_SIZE;
   render();
   e.target.value='';
 });
