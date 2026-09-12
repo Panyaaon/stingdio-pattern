@@ -133,6 +133,15 @@ footer{margin:28px 18px 0;padding:18px 0;border-top:1px solid #f3cad9;display:fl
   .creator-row{grid-template-columns:minmax(0,1fr) 94px}
 }
 
+
+/* Card overlay layout */
+.thumb .badge.overlay-tag{position:absolute;left:9px;top:9px;z-index:3;box-shadow:0 3px 10px rgba(255,111,174,.10);background:rgba(255,238,246,.94);backdrop-filter:blur(5px)}
+.thumb .grid-size.overlay-size{position:absolute;right:9px;bottom:9px;z-index:3;background:rgba(255,255,255,.94);border:1px solid #f3c5d7;border-radius:999px;padding:5px 9px;box-shadow:0 3px 10px rgba(90,70,80,.08);backdrop-filter:blur(5px)}
+.title-row{margin-bottom:0}
+.mini-action{height:34px;padding:0 12px;background:#fff0f6;border-color:#ffafd0;color:#ff5d9f;font-size:11px;gap:5px}
+.mini-action .view-glass{font-size:19px;line-height:1;font-weight:900}
+.gallery.cols-2 .mini-action{height:30px;padding:0 10px;font-size:9px}.gallery.cols-2 .mini-action .view-glass{font-size:17px}
+@media(max-width:520px){.thumb .badge.overlay-tag{left:7px;top:7px}.thumb .grid-size.overlay-size{right:7px;bottom:7px;padding:4px 7px}.gallery.cols-2 .mini-action{height:29px;padding:0 8px}.gallery.cols-2 .mini-action .view-glass{font-size:17px}}
 </style>
 </head>
 <body>
@@ -278,18 +287,12 @@ function cardHTML(item){
     : `<div class="placeholder">♡<br>${title}</div>`;
 
   return `<article class="card">
-    <div class="thumb">${media}<div class="fav">♡</div></div>
+    <div class="thumb">${media}<span class="badge overlay-tag">${tag}</span><div class="fav">♡</div><span class="grid-size overlay-size"><span class="grid-icon">▦</span>${size}</span></div>
     <div class="meta">
       <div class="title-row">
         <div class="title">${title}</div>
         <div class="title-actions">
-          <button class="mini-action" aria-label="View pattern" onclick="openPattern('${src.replace(/'/g,"\\'")}')">⌕ <span>View</span></button>
-        </div>
-      </div>
-      <div class="info">
-        <div class="left-info">
-          <span class="badge">${tag}</span>
-          <span class="grid-size"><span class="grid-icon">▦</span>${size}</span>
+          <button class="mini-action" aria-label="View pattern" onclick="openPattern('${src.replace(/'/g,"\\'")}')"><span class="view-glass">⌕</span><span>View</span></button>
         </div>
       </div>
     </div>
@@ -350,4 +353,13 @@ loadPatternsFromGitHub();
 </script>
 </body>
 </html>
-<style>.actions{display:none!important}</style>
+<style>.actions{display:none!important}
+/* Card overlay layout */
+.thumb .badge.overlay-tag{position:absolute;left:9px;top:9px;z-index:3;box-shadow:0 3px 10px rgba(255,111,174,.10);background:rgba(255,238,246,.94);backdrop-filter:blur(5px)}
+.thumb .grid-size.overlay-size{position:absolute;right:9px;bottom:9px;z-index:3;background:rgba(255,255,255,.94);border:1px solid #f3c5d7;border-radius:999px;padding:5px 9px;box-shadow:0 3px 10px rgba(90,70,80,.08);backdrop-filter:blur(5px)}
+.title-row{margin-bottom:0}
+.mini-action{height:34px;padding:0 12px;background:#fff0f6;border-color:#ffafd0;color:#ff5d9f;font-size:11px;gap:5px}
+.mini-action .view-glass{font-size:19px;line-height:1;font-weight:900}
+.gallery.cols-2 .mini-action{height:30px;padding:0 10px;font-size:9px}.gallery.cols-2 .mini-action .view-glass{font-size:17px}
+@media(max-width:520px){.thumb .badge.overlay-tag{left:7px;top:7px}.thumb .grid-size.overlay-size{right:7px;bottom:7px;padding:4px 7px}.gallery.cols-2 .mini-action{height:29px;padding:0 8px}.gallery.cols-2 .mini-action .view-glass{font-size:17px}}
+</style>
