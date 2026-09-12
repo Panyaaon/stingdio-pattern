@@ -33,10 +33,10 @@ button,input,select{font:inherit} button{-webkit-tap-highlight-color:transparent
 .card{background:rgba(255,255,255,.96);border:1px solid #f1c8d8;border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
 .thumb{position:relative;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:230px} .thumb img{width:100%;height:auto;max-height:80vh;object-fit:contain;display:block;background:#fff} .gallery.cols-2 .thumb{min-height:160px} .gallery.cols-2 .thumb img{max-height:50vh}
 .fav{position:absolute;right:9px;top:9px;width:42px;height:42px;border-radius:50%;border:1px solid #f3c6d8;background:rgba(255,255,255,.96);display:grid;place-items:center;color:#ff69a7;font-size:24px;box-shadow:0 5px 14px rgba(255,111,174,.10)}
-.meta{padding:12px 14px 14px} .title{font-weight:1000;font-size:21px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.25px}
+.meta{padding:12px 14px 14px} .title{font-weight:1000;font-size:21px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.25px} .title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}.title-row .title{margin-bottom:0;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title-actions{display:flex;align-items:center;gap:5px;flex:0 0 auto}.mini-action{height:30px;border:1px solid #efbfd2;background:#fff;border-radius:10px;color:#6f5261;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:0 8px;font-size:11px;font-weight:900;cursor:pointer}.mini-action.icon-only{width:30px;padding:0}.mini-action:active{transform:scale(.96)}
 .info{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px} .left-info{display:flex;align-items:center;gap:10px;min-width:0} .badge{display:inline-flex;align-items:center;border-radius:999px;padding:6px 13px;background:#ffdce9;color:#ff5f9f;font-size:11px;font-weight:1000} .grid-size{display:inline-flex;align-items:center;gap:6px;color:#827a80;font-size:12px;font-weight:850;white-space:nowrap} .grid-icon{font-size:16px;color:#706b70} .date{font-size:11px;color:#a0979c;white-space:nowrap}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px} .action-btn{height:42px;border:1px solid #f0b9d0;border-radius:13px;background:#fff;color:#2f2b2e;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px} .action-btn.primary{background:linear-gradient(180deg,#ffe4ef,#ffd8e9)} .action-icon{font-size:17px}
-.gallery.cols-2 .meta{padding:10px 10px 11px} .gallery.cols-2 .title{font-size:16px} .gallery.cols-2 .info{gap:6px} .gallery.cols-2 .left-info{gap:6px} .gallery.cols-2 .badge{font-size:10px;padding:5px 10px} .gallery.cols-2 .grid-size{font-size:10px;gap:4px} .gallery.cols-2 .date{font-size:10px} .gallery.cols-2 .actions{gap:6px;margin-top:9px} .gallery.cols-2 .action-btn{height:36px;font-size:10px;padding:6px 4px;gap:4px} .gallery.cols-2 .action-icon{font-size:14px} .gallery.cols-2 .fav{width:34px;height:34px;font-size:19px;right:7px;top:7px}
+.gallery.cols-2 .meta{padding:10px 10px 11px} .gallery.cols-2 .title-row{gap:5px;margin-bottom:8px}.gallery.cols-2 .mini-action{height:27px;font-size:9px;padding:0 6px;border-radius:9px}.gallery.cols-2 .mini-action.icon-only{width:27px;padding:0} .gallery.cols-2 .title{font-size:16px} .gallery.cols-2 .info{gap:6px} .gallery.cols-2 .left-info{gap:6px} .gallery.cols-2 .badge{font-size:10px;padding:5px 10px} .gallery.cols-2 .grid-size{font-size:10px;gap:4px} .gallery.cols-2 .date{font-size:10px} .gallery.cols-2 .actions{gap:6px;margin-top:9px} .gallery.cols-2 .action-btn{height:36px;font-size:10px;padding:6px 4px;gap:4px} .gallery.cols-2 .action-icon{font-size:14px} .gallery.cols-2 .fav{width:34px;height:34px;font-size:19px;right:7px;top:7px}
 .placeholder{padding:40px 18px;text-align:center;color:#958992;font-weight:900}
 .load-more-wrap{display:none;padding:0 18px 8px;text-align:center} .load-more{width:min(100%,290px);border:1px solid #f0aeca;border-radius:999px;padding:12px 18px;background:linear-gradient(180deg,#ff82b6,#ff6fae);color:#fff;font-weight:1000;cursor:pointer;box-shadow:0 8px 20px rgba(255,111,174,.16)} .showing{text-align:center;color:#a2969e;font-size:11px;margin-top:8px}
 .empty{display:none;margin:0 18px 24px;padding:28px;border:1px dashed #eebcd1;border-radius:18px;background:#fff;text-align:center;font-weight:900;color:#8a7c84}
@@ -280,17 +280,19 @@ function cardHTML(item){
   return `<article class="card">
     <div class="thumb">${media}<div class="fav">♡</div></div>
     <div class="meta">
-      <div class="title">${title}</div>
+      <div class="title-row">
+        <div class="title">${title}</div>
+        <div class="title-actions">
+          <button class="mini-action" aria-label="View pattern" onclick="openPattern('${src.replace(/'/g,"\\'")}')">⌕ <span>View</span></button>
+          <button class="mini-action icon-only" aria-label="Download pattern" onclick="downloadPattern('${src.replace(/'/g,"\\'")}','${title.replace(/'/g,"\\'")}')">⇩</button>
+        </div>
+      </div>
       <div class="info">
         <div class="left-info">
           <span class="badge">${tag}</span>
           <span class="grid-size"><span class="grid-icon">▦</span>${size}</span>
         </div>
         <span class="date">STINGDiO</span>
-      </div>
-      <div class="actions">
-        <button class="action-btn primary" onclick="openPattern('${src.replace(/'/g,"\\'")}')"><span class="action-icon">◉</span>View</button>
-        <button class="action-btn" onclick="downloadPattern('${src.replace(/'/g,"\\'")}','${title.replace(/'/g,"\\'")}')"><span class="action-icon">⇩</span>Download</button>
       </div>
     </div>
   </article>`;
@@ -350,3 +352,4 @@ loadPatternsFromGitHub();
 </script>
 </body>
 </html>
+<style>.actions{display:none!important}</style>
